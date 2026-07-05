@@ -1,6 +1,7 @@
 from app.models.user import User, UserProfile, LanguageLevel
 from app.models.criteria import CountryCriteria, DocumentChecklist, TypeCritere
 from app.models.scoring import ScoringResult
+from app.models.conversation import ConversationState
 
 __all__ = [
     "User",
@@ -10,4 +11,5 @@ __all__ = [
     "DocumentChecklist",
     "TypeCritere",
     "ScoringResult",
+    "ConversationState",
 ]
