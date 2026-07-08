@@ -6,8 +6,23 @@ Consomme l'API FastAPI déjà en place, ne duplique aucune logique métier.
 """
 import streamlit as st
 import requests
+import os
 
-API_URL = "http://localhost:8000"
+
+def _obtenir_api_url() -> str:
+    """
+    Priorité : Streamlit Secrets (production) > variable d'environnement > localhost (dev local).
+    st.secrets peut lever une exception si aucun fichier secrets.toml n'existe -> on l'attrape.
+    """
+    try:
+        if "BOUSSOLE_API_URL" in st.secrets:
+            return st.secrets["BOUSSOLE_API_URL"]
+    except Exception:
+        pass
+    return os.getenv("BOUSSOLE_API_URL", "http://localhost:8000")
+
+
+API_URL = _obtenir_api_url()
 
 st.set_page_config(page_title="Boussole", page_icon="🧭", layout="centered")
 
