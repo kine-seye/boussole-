@@ -1,8 +1,10 @@
 """
-Dashboard Streamlit pour Boussole.
+Dashboard Streamlit pour Boussole — identité visuelle "instrument de navigation".
 
-Interface simple en 3 étapes : profil (+ upload CV optionnel) -> score -> checklist.
-Consomme l'API FastAPI déjà en place, ne duplique aucune logique métier.
+Palette : indigo profond (#12213D), papier chaud (#FBF8F2), laiton (#B98A2E),
+sarcelle/ambre/brique pour les 3 tranches de chances (Élevé/Moyen/Faible).
+Typographie : Fraunces (titres) + Work Sans (corps) + IBM Plex Mono (données).
+Signature : cadran de boussole en SVG pour visualiser le score, au lieu d'un badge coloré.
 """
 import streamlit as st
 import requests
@@ -10,10 +12,7 @@ import os
 
 
 def _obtenir_api_url() -> str:
-    """
-    Priorité : Streamlit Secrets (production) > variable d'environnement > localhost (dev local).
-    st.secrets peut lever une exception si aucun fichier secrets.toml n'existe -> on l'attrape.
-    """
+    """Priorité : Streamlit Secrets (production) > variable d'environnement > localhost (dev local)."""
     try:
         if "BOUSSOLE_API_URL" in st.secrets:
             return st.secrets["BOUSSOLE_API_URL"]
@@ -26,14 +25,123 @@ API_URL = _obtenir_api_url()
 
 st.set_page_config(page_title="Boussole", page_icon="🧭", layout="centered")
 
-# --- État de session ---
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+
+:root {
+    --ink: #12213D;
+    --paper: #FBF8F2;
+    --brass: #B98A2E;
+    --brass-light: #E4C883;
+    --teal: #1F6F5C;
+    --amber: #D6A23B;
+    --brick: #B4432F;
+    --ink-muted: #5B6472;
+    --border-soft: rgba(18, 33, 61, 0.12);
+}
+
+.stApp { background: var(--paper); }
+
+html, body, [class*="css"] { font-family: 'Work Sans', sans-serif; color: var(--ink); }
+h1, h2, h3 { font-family: 'Fraunces', serif !important; color: var(--ink) !important; letter-spacing: -0.01em; }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+#MainMenu, footer {visibility: hidden;}
+
+.boussole-hero {
+    display: flex; align-items: center; gap: 1.1rem;
+    padding: 1.6rem 0 0.4rem 0; border-bottom: 1px solid var(--border-soft); margin-bottom: 1.6rem;
+}
+.boussole-hero-icon { width: 52px; height: 52px; flex-shrink: 0; }
+.boussole-hero-title { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 700; color: var(--ink); line-height: 1; margin: 0; }
+.boussole-hero-tagline { color: var(--ink-muted); font-size: 0.98rem; margin-top: 0.35rem; }
+
+.boussole-steps { display: flex; gap: 0.5rem; margin-bottom: 1.8rem; }
+.boussole-step {
+    flex: 1; padding: 0.6rem 0.9rem; border-radius: 10px; background: white;
+    border: 1px solid var(--border-soft); font-size: 0.82rem; color: var(--ink-muted);
+}
+.boussole-step.actif { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.boussole-step-num { font-family: 'IBM Plex Mono', monospace; font-weight: 500; opacity: 0.6; margin-right: 0.4rem; }
+
+.boussole-card {
+    background: white; border: 1px solid var(--border-soft); border-radius: 14px;
+    padding: 1.4rem 1.6rem; margin-bottom: 1.2rem;
+}
+.boussole-card-brass { border-left: 3px solid var(--brass); }
+
+.critere-ligne { padding: 0.85rem 0; border-bottom: 1px solid var(--border-soft); }
+.critere-ligne:last-child { border-bottom: none; }
+.critere-titre { font-weight: 600; font-size: 0.96rem; }
+.critere-detail { color: var(--ink-muted); font-size: 0.85rem; margin-top: 0.15rem; }
+.critere-explication { color: var(--ink-muted); font-size: 0.82rem; margin-top: 0.25rem; font-style: italic; }
+.tag-eliminatoire { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brick); font-weight: 600; margin-left: 0.4rem; }
+
+.action-coaching { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.6rem 0; }
+.action-impact {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase;
+    letter-spacing: 0.04em; padding: 0.15rem 0.5rem; border-radius: 5px; flex-shrink: 0; margin-top: 0.15rem;
+}
+.impact-fort { background: rgba(180,67,47,0.12); color: var(--brick); }
+.impact-moyen { background: rgba(214,162,59,0.15); color: #8a6420; }
+.impact-faible { background: rgba(31,111,92,0.12); color: var(--teal); }
+
+.doc-ligne { display: flex; justify-content: space-between; align-items: baseline; padding: 0.7rem 0; border-bottom: 1px solid var(--border-soft); }
+.doc-ligne:last-child { border-bottom: none; }
+.doc-nom { font-weight: 600; font-size: 0.92rem; }
+.doc-tag { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 5px; white-space: nowrap; }
+.doc-obligatoire { background: rgba(180,67,47,0.1); color: var(--brick); }
+.doc-optionnel { background: rgba(91,100,114,0.1); color: var(--ink-muted); }
+.doc-remarque { color: var(--ink-muted); font-size: 0.8rem; margin-top: 0.2rem; }
+
+.stButton > button {
+    background: var(--ink) !important; color: var(--paper) !important; border-radius: 10px !important;
+    border: none !important; font-weight: 600 !important; padding: 0.65rem 1.2rem !important; transition: opacity 0.15s ease;
+}
+.stButton > button:hover { opacity: 0.88; }
+
+.boussole-disclaimer {
+    color: var(--ink-muted); font-size: 0.78rem; line-height: 1.5;
+    padding: 1rem 0 2rem 0; border-top: 1px solid var(--border-soft); margin-top: 1.5rem;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+def cadran_boussole(tranche: str) -> str:
+    """
+    SVG du cadran de boussole - signature visuelle de l'app.
+    Trois zones colorées (Faible/Moyen/Élevé), aiguille pointant vers la tranche active.
+    Volontairement 3 positions discrètes (pas un curseur continu) : on n'affiche jamais
+    un score numérique précis à l'utilisateur, seulement la tranche qualitative.
+    """
+    positions_aiguille = {
+        "Faible": (43.7, 67.5),
+        "Moyen": (100.0, 35.0),
+        "Élevé": (156.3, 67.5),
+    }
+    tip_x, tip_y = positions_aiguille.get(tranche, (100.0, 35.0))
+
+    return f"""
+    <svg viewBox="0 0 200 130" style="width:100%; max-width:320px; display:block; margin:0 auto;">
+        <path d="M 100,100 L 20.0,100.0 A 80,80 0 0 1 60.0,30.7 Z" fill="#B4432F" opacity="0.85"/>
+        <path d="M 100,100 L 60.0,30.7 A 80,80 0 0 1 140.0,30.7 Z" fill="#D6A23B" opacity="0.85"/>
+        <path d="M 100,100 L 140.0,30.7 A 80,80 0 0 1 180.0,100.0 Z" fill="#1F6F5C" opacity="0.85"/>
+        <circle cx="100" cy="100" r="82" fill="none" stroke="#12213D" stroke-width="1.5" opacity="0.15"/>
+        <line x1="100" y1="100" x2="{tip_x}" y2="{tip_y}" stroke="#12213D" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="100" cy="100" r="7" fill="#12213D"/>
+        <text x="20" y="118" font-family="Work Sans" font-size="9" fill="#5B6472">Faible</text>
+        <text x="82" y="24" font-family="Work Sans" font-size="9" fill="#5B6472">Moyen</text>
+        <text x="158" y="118" font-family="Work Sans" font-size="9" fill="#5B6472">Élevé</text>
+    </svg>
+    """
+
+
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
 if "resultat_scoring" not in st.session_state:
     st.session_state.resultat_scoring = None
-
-st.title("🧭 Boussole")
-st.caption("Évalue tes chances d'immigration ou de bourse — Canada & France")
 
 PAYS_DISPONIBLES = ["Canada", "France"]
 DEMARCHES_DISPONIBLES = {"Visa étudiant": "visa_etudiant", "Bourse d'études": "bourse"}
@@ -42,27 +150,59 @@ NIVEAUX_LANGUE = ["AUCUN", "A1", "A2", "B1", "B2", "C1", "C2"]
 
 
 def appeler_api(methode: str, endpoint: str, **kwargs):
-    """Wrapper simple avec gestion d'erreur lisible pour l'utilisateur."""
+    """
+    Wrapper simple avec gestion d'erreur lisible pour l'utilisateur.
+    Timeout élevé (60s) car le backend Render (plan gratuit) peut être en veille
+    et mettre jusqu'à 50s à se réveiller sur la première requête.
+    """
     try:
-        reponse = requests.request(methode, f"{API_URL}{endpoint}", timeout=30, **kwargs)
+        reponse = requests.request(methode, f"{API_URL}{endpoint}", timeout=60, **kwargs)
         reponse.raise_for_status()
         return reponse.json(), None
     except requests.exceptions.ConnectionError:
-        return None, "❌ Impossible de joindre le serveur. Vérifie que `uvicorn` tourne bien sur le port 8000."
+        return None, "Impossible de joindre le serveur. Vérifie que le backend est bien démarré."
+    except requests.exceptions.Timeout:
+        return None, "Le serveur met du temps à répondre (réveil après inactivité). Réessaie dans quelques secondes."
     except requests.exceptions.HTTPError as e:
         try:
             detail = reponse.json().get("detail", str(e))
         except Exception:
             detail = str(e)
-        return None, f"❌ Erreur : {detail}"
+        return None, f"Erreur : {detail}"
     except Exception as e:
-        return None, f"❌ Erreur inattendue : {e}"
+        return None, f"Erreur inattendue : {e}"
 
 
-# ============================================================
-# ÉTAPE 1 — PROFIL
-# ============================================================
-st.header("1. Ton profil")
+st.markdown("""
+<div class="boussole-hero">
+    <svg class="boussole-hero-icon" viewBox="0 0 52 52">
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#12213D" stroke-width="2"/>
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#B98A2E" stroke-width="1" opacity="0.4"/>
+        <polygon points="26,10 30,26 26,42 22,26" fill="#12213D"/>
+        <polygon points="26,10 30,26 26,26" fill="#B98A2E"/>
+        <circle cx="26" cy="26" r="3" fill="#B98A2E"/>
+    </svg>
+    <div>
+        <p class="boussole-hero-title">Boussole</p>
+        <p class="boussole-hero-tagline">Ton copilote pour réussir tes démarches d'immigration et de bourses — Canada & France</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+etape_1_active = "actif" if not st.session_state.resultat_scoring else ""
+etape_2_active = "actif" if st.session_state.resultat_scoring else ""
+
+st.markdown(f"""
+<div class="boussole-steps">
+    <div class="boussole-step {etape_1_active}"><span class="boussole-step-num">01</span>Ton profil</div>
+    <div class="boussole-step {etape_2_active}"><span class="boussole-step-num">02</span>Tes chances</div>
+    <div class="boussole-step {etape_2_active}"><span class="boussole-step-num">03</span>Documents</div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown('<div class="boussole-card">', unsafe_allow_html=True)
+st.markdown("##### Parle-moi de toi")
+st.caption("Ces informations restent privées et servent uniquement à évaluer tes chances.")
 
 with st.form("form_profil"):
     col1, col2 = st.columns(2)
@@ -84,7 +224,9 @@ with st.form("form_profil"):
     with col4:
         demarche_label = st.selectbox("Type de démarche", list(DEMARCHES_DISPONIBLES.keys()))
 
-    submit_profil = st.form_submit_button("🎯 Enregistrer mon profil et évaluer mes chances", use_container_width=True)
+    submit_profil = st.form_submit_button("Enregistrer mon profil et évaluer mes chances", use_container_width=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 if submit_profil:
     if not whatsapp:
@@ -108,10 +250,7 @@ if submit_profil:
             st.error(erreur)
         else:
             st.session_state.user_id = resultat["user_id"]
-            st.success("✅ Profil enregistré !")
 
-            # Enchaîne directement sur le calcul du score, pour éviter tout résultat
-            # périmé et supprimer l'étape manuelle en double.
             with st.spinner("Calcul de tes chances en cours..."):
                 resultat_score, erreur_score = appeler_api(
                     "POST", "/score",
@@ -125,10 +264,8 @@ if submit_profil:
                 st.error(erreur_score)
             else:
                 st.session_state.resultat_scoring = resultat_score
+                st.rerun()
 
-# ============================================================
-# ÉTAPE 1bis — UPLOAD CV (optionnel, enrichit le profil)
-# ============================================================
 if st.session_state.user_id:
     with st.expander("📄 Enrichir mon profil avec mon CV (PDF, optionnel)"):
         fichier_cv = st.file_uploader("Choisis ton CV au format PDF", type=["pdf"])
@@ -141,71 +278,89 @@ if st.session_state.user_id:
             if erreur:
                 st.error(erreur)
             else:
-                st.success("✅ CV analysé et profil enrichi !")
+                st.success("CV analysé et profil enrichi !")
                 st.json(resultat["donnees_extraites"])
-
-# ============================================================
-# ÉTAPE 2 — SCORE
-# ============================================================
-if st.session_state.user_id:
-    st.header("2. Tes chances")
 
 if st.session_state.resultat_scoring:
     r = st.session_state.resultat_scoring
 
-    couleurs_tranche = {"Élevé": "🟢", "Moyen": "🟡", "Faible": "🔴"}
-    emoji = couleurs_tranche.get(r["tranche"], "⚪")
-
-    st.subheader(f"{emoji} Chances estimées : {r['tranche']}")
+    st.markdown('<div class="boussole-card boussole-card-brass">', unsafe_allow_html=True)
+    st.markdown("##### Tes chances estimées")
+    st.markdown(cadran_boussole(r["tranche"]), unsafe_allow_html=True)
+    st.markdown(
+        f'<p style="text-align:center; font-family:Fraunces,serif; font-size:1.4rem; '
+        f'font-weight:600; margin-top:0.5rem;">{r["tranche"]}</p>',
+        unsafe_allow_html=True,
+    )
 
     if not r["eligible"]:
         st.warning(
-            "⚠️ Au moins un critère éliminatoire n'est pas rempli : "
+            "Au moins un critère éliminatoire n'est pas rempli : "
             + ", ".join(r["criteres_manquants_eliminatoires"])
         )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("**Détail par critère :**")
+    st.markdown('<div class="boussole-card">', unsafe_allow_html=True)
+    st.markdown("##### Détail par critère")
     for c in r["criteres"]:
         statut = "✅" if c["rempli"] else "❌"
-        eliminatoire_tag = " *(éliminatoire)*" if c["eliminatoire"] else ""
-        with st.container():
-            st.markdown(f"{statut} **{c['libelle']}**{eliminatoire_tag}")
-            st.caption(f"Requis : {c['valeur_requise']} — Toi : {c['valeur_utilisateur'] or 'non renseigné'}")
-            if c["explication"]:
-                st.caption(f"ℹ️ {c['explication']}")
+        eliminatoire_tag = '<span class="tag-eliminatoire">Éliminatoire</span>' if c["eliminatoire"] else ""
+        explication_html = f'<div class="critere-explication">{c["explication"]}</div>' if c["explication"] else ""
+        st.markdown(f"""
+        <div class="critere-ligne">
+            <div class="critere-titre">{statut} {c['libelle']}{eliminatoire_tag}</div>
+            <div class="critere-detail">Requis : {c['valeur_requise']} · Toi : {c['valeur_utilisateur'] or 'non renseigné'}</div>
+            {explication_html}
+        </div>
+        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.subheader("🎯 Ton plan d'action")
+    st.markdown('<div class="boussole-card">', unsafe_allow_html=True)
+    st.markdown("##### Ton plan d'action")
     plan = r["plan_coaching"]
     if plan.get("message_general"):
-        st.info(plan["message_general"])
+        st.markdown(f'<p style="color:var(--ink-muted); font-size:0.92rem;">{plan["message_general"]}</p>', unsafe_allow_html=True)
     for action in plan.get("actions", []):
         impact = action.get("impact", "Moyen")
-        icone_impact = {"Fort": "🔥", "Moyen": "⚡", "Faible": "💡"}.get(impact, "⚡")
+        classe_impact = {"Fort": "impact-fort", "Moyen": "impact-moyen", "Faible": "impact-faible"}.get(impact, "impact-moyen")
         delai = action.get("delai_estime", "")
-        st.markdown(f"{icone_impact} **{action['action']}**" + (f" _(≈ {delai})_" if delai else ""))
+        delai_html = f' <span style="color:var(--ink-muted); font-size:0.82rem;">· {delai}</span>' if delai else ""
+        st.markdown(f"""
+        <div class="action-coaching">
+            <span class="action-impact {classe_impact}">{impact}</span>
+            <span>{action['action']}{delai_html}</span>
+        </div>
+        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.caption(
-        "⚠️ Ces informations sont indicatives. Vérifie toujours les exigences à jour "
-        "sur le site officiel avant toute démarche (ambassade, Campus France, IRCC)."
-    )
-
-# ============================================================
-# ÉTAPE 3 — CHECKLIST DOCUMENTS
-# ============================================================
-if st.session_state.resultat_scoring:
-    st.header("3. Documents à préparer")
     resultat_checklist, erreur = appeler_api(
-        "GET", f"/checklist?pays={pays_cible}&type_demarche={DEMARCHES_DISPONIBLES[demarche_label]}"
+        "GET", f"/checklist?pays={r['pays']}&type_demarche={r['type_demarche']}"
     )
     if erreur:
         st.error(erreur)
     else:
+        st.markdown('<div class="boussole-card">', unsafe_allow_html=True)
+        st.markdown("##### Documents à préparer")
         for doc in resultat_checklist["documents"]:
-            obligatoire_tag = "🔴 Obligatoire" if doc["obligatoire"] else "⚪ Optionnel"
-            st.markdown(f"**{doc['document']}** — {obligatoire_tag}")
-            if doc["delai_obtention_estime"]:
-                st.caption(f"⏱️ Délai estimé : {doc['delai_obtention_estime']}")
-            if doc["remarque"]:
-                st.caption(f"💡 {doc['remarque']}")
-            st.markdown("")
+            tag_classe = "doc-obligatoire" if doc["obligatoire"] else "doc-optionnel"
+            tag_texte = "Obligatoire" if doc["obligatoire"] else "Optionnel"
+            delai_html = f'<div class="doc-remarque">⏱ {doc["delai_obtention_estime"]}</div>' if doc["delai_obtention_estime"] else ""
+            remarque_html = f'<div class="doc-remarque">{doc["remarque"]}</div>' if doc["remarque"] else ""
+            st.markdown(f"""
+            <div class="doc-ligne">
+                <div>
+                    <div class="doc-nom">{doc['document']}</div>
+                    {delai_html}
+                    {remarque_html}
+                </div>
+                <span class="doc-tag {tag_classe}">{tag_texte}</span>
+            </div>
+            """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown("""
+<div class="boussole-disclaimer">
+    Ces informations sont indicatives et générées automatiquement. Vérifie toujours les exigences
+    officielles à jour auprès des sources officielles (ambassade, Campus France, IRCC) avant toute démarche.
+</div>
+""", unsafe_allow_html=True)
