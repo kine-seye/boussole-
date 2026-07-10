@@ -120,6 +120,40 @@ p, span, div, label { color: var(--ink) !important; }
     color: var(--ink-muted); font-size: 0.78rem; line-height: 1.5;
     padding: 1rem 0 2rem 0; border-top: 1px solid var(--border-soft); margin-top: 1.5rem;
 }
+
+/* Widgets de formulaire : le thème sombre peut persister sur ces composants même
+   quand le fond général de page est clair -> on force fond blanc + texte lisible. */
+input, textarea, select {
+    background-color: #FFFFFF !important;
+    color: var(--ink) !important;
+}
+[data-baseweb="select"] > div,
+[data-baseweb="input"] > div {
+    background-color: #FFFFFF !important;
+    color: var(--ink) !important;
+    border-color: var(--border-soft) !important;
+}
+[data-baseweb="select"] *,
+[data-baseweb="input"] * {
+    color: var(--ink) !important;
+}
+[data-baseweb="popover"], [data-baseweb="menu"] {
+    background-color: #FFFFFF !important;
+}
+li[role="option"] {
+    background-color: #FFFFFF !important;
+    color: var(--ink) !important;
+}
+li[role="option"]:hover, li[aria-selected="true"] {
+    background-color: rgba(185, 138, 46, 0.15) !important;
+}
+.stNumberInput button {
+    background-color: #FFFFFF !important;
+    color: var(--ink) !important;
+}
+.stButton > button, .stButton > button * {
+    color: var(--paper) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
