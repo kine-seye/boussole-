@@ -11,6 +11,19 @@ import requests
 import os
 
 
+def html(chaine: str) -> str:
+    """Nettoie un bloc HTML multi-lignes avant de le passer à st.markdown.
+    Deux pièges Markdown corrigés ici :
+    1. Toute ligne indentée de 4+ espaces est traitée comme un bloc de code brut
+       (non interprété) -> on retire l'indentation de CHAQUE ligne.
+    2. Une ligne vide au milieu du bloc termine prématurément le "bloc HTML" au sens
+       CommonMark, faisant retomber la suite en parsing Markdown normal (d'où des
+       balises visibles en texte brut) -> on retire aussi les lignes vides résiduelles
+       (ex: quand une valeur optionnelle interpolée est une chaîne vide)."""
+    lignes = (ligne.lstrip() for ligne in chaine.strip().split("\n"))
+    return "\n".join(ligne for ligne in lignes if ligne)
+
+
 def _obtenir_api_url() -> str:
     """Priorité : Streamlit Secrets (production) > variable d'environnement > localhost (dev local)."""
     try:
@@ -41,10 +54,11 @@ st.markdown("""
     --border-soft: rgba(18, 33, 61, 0.12);
 }
 
-.stApp { background: var(--paper); }
+.stApp { background: var(--paper) !important; }
 
-html, body, [class*="css"] { font-family: 'Work Sans', sans-serif; color: var(--ink); }
-h1, h2, h3 { font-family: 'Fraunces', serif !important; color: var(--ink) !important; letter-spacing: -0.01em; }
+html, body, [class*="css"] { font-family: 'Work Sans', sans-serif; color: var(--ink) !important; }
+h1, h2, h3, h4, h5, h6 { font-family: 'Fraunces', serif !important; color: var(--ink) !important; letter-spacing: -0.01em; }
+p, span, div, label { color: var(--ink) !important; }
 .mono { font-family: 'IBM Plex Mono', monospace; }
 
 #MainMenu, footer {visibility: hidden;}
@@ -54,15 +68,15 @@ h1, h2, h3 { font-family: 'Fraunces', serif !important; color: var(--ink) !impor
     padding: 1.6rem 0 0.4rem 0; border-bottom: 1px solid var(--border-soft); margin-bottom: 1.6rem;
 }
 .boussole-hero-icon { width: 52px; height: 52px; flex-shrink: 0; }
-.boussole-hero-title { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 700; color: var(--ink); line-height: 1; margin: 0; }
-.boussole-hero-tagline { color: var(--ink-muted); font-size: 0.98rem; margin-top: 0.35rem; }
+.boussole-hero-title { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 700; color: var(--ink) !important; line-height: 1; margin: 0; }
+.boussole-hero-tagline { color: var(--ink-muted) !important; font-size: 0.98rem; margin-top: 0.35rem; }
 
 .boussole-steps { display: flex; gap: 0.5rem; margin-bottom: 1.8rem; }
 .boussole-step {
     flex: 1; padding: 0.6rem 0.9rem; border-radius: 10px; background: white;
-    border: 1px solid var(--border-soft); font-size: 0.82rem; color: var(--ink-muted);
+    border: 1px solid var(--border-soft); font-size: 0.82rem; color: var(--ink-muted) !important;
 }
-.boussole-step.actif { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.boussole-step.actif, .boussole-step.actif * { background: var(--ink); border-color: var(--ink); color: var(--paper) !important; }
 .boussole-step-num { font-family: 'IBM Plex Mono', monospace; font-weight: 500; opacity: 0.6; margin-right: 0.4rem; }
 
 .boussole-card {
@@ -73,27 +87,28 @@ h1, h2, h3 { font-family: 'Fraunces', serif !important; color: var(--ink) !impor
 
 .critere-ligne { padding: 0.85rem 0; border-bottom: 1px solid var(--border-soft); }
 .critere-ligne:last-child { border-bottom: none; }
-.critere-titre { font-weight: 600; font-size: 0.96rem; }
-.critere-detail { color: var(--ink-muted); font-size: 0.85rem; margin-top: 0.15rem; }
-.critere-explication { color: var(--ink-muted); font-size: 0.82rem; margin-top: 0.25rem; font-style: italic; }
-.tag-eliminatoire { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brick); font-weight: 600; margin-left: 0.4rem; }
+.critere-titre { font-weight: 600; font-size: 0.96rem; color: var(--ink) !important; }
+.critere-detail { color: var(--ink-muted) !important; font-size: 0.85rem; margin-top: 0.15rem; }
+.critere-explication { color: var(--ink-muted) !important; font-size: 0.82rem; margin-top: 0.25rem; font-style: italic; }
+.tag-eliminatoire { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brick) !important; font-weight: 600; margin-left: 0.4rem; }
 
 .action-coaching { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.6rem 0; }
+.action-coaching span { color: var(--ink) !important; }
 .action-impact {
     font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase;
     letter-spacing: 0.04em; padding: 0.15rem 0.5rem; border-radius: 5px; flex-shrink: 0; margin-top: 0.15rem;
 }
-.impact-fort { background: rgba(180,67,47,0.12); color: var(--brick); }
-.impact-moyen { background: rgba(214,162,59,0.15); color: #8a6420; }
-.impact-faible { background: rgba(31,111,92,0.12); color: var(--teal); }
+.impact-fort { background: rgba(180,67,47,0.12); color: var(--brick) !important; }
+.impact-moyen { background: rgba(214,162,59,0.15); color: #8a6420 !important; }
+.impact-faible { background: rgba(31,111,92,0.12); color: var(--teal) !important; }
 
 .doc-ligne { display: flex; justify-content: space-between; align-items: baseline; padding: 0.7rem 0; border-bottom: 1px solid var(--border-soft); }
 .doc-ligne:last-child { border-bottom: none; }
-.doc-nom { font-weight: 600; font-size: 0.92rem; }
+.doc-nom { font-weight: 600; font-size: 0.92rem; color: var(--ink) !important; }
 .doc-tag { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 5px; white-space: nowrap; }
-.doc-obligatoire { background: rgba(180,67,47,0.1); color: var(--brick); }
-.doc-optionnel { background: rgba(91,100,114,0.1); color: var(--ink-muted); }
-.doc-remarque { color: var(--ink-muted); font-size: 0.8rem; margin-top: 0.2rem; }
+.doc-obligatoire { background: rgba(180,67,47,0.1); color: var(--brick) !important; }
+.doc-optionnel { background: rgba(91,100,114,0.1); color: var(--ink-muted) !important; }
+.doc-remarque { color: var(--ink-muted) !important; font-size: 0.8rem; margin-top: 0.2rem; }
 
 .stButton > button {
     background: var(--ink) !important; color: var(--paper) !important; border-radius: 10px !important;
@@ -123,7 +138,7 @@ def cadran_boussole(tranche: str) -> str:
     }
     tip_x, tip_y = positions_aiguille.get(tranche, (100.0, 35.0))
 
-    return f"""
+    return html(f"""
     <svg viewBox="0 0 200 130" style="width:100%; max-width:320px; display:block; margin:0 auto;">
         <path d="M 100,100 L 20.0,100.0 A 80,80 0 0 1 60.0,30.7 Z" fill="#B4432F" opacity="0.85"/>
         <path d="M 100,100 L 60.0,30.7 A 80,80 0 0 1 140.0,30.7 Z" fill="#D6A23B" opacity="0.85"/>
@@ -135,7 +150,7 @@ def cadran_boussole(tranche: str) -> str:
         <text x="82" y="24" font-family="Work Sans" font-size="9" fill="#5B6472">Moyen</text>
         <text x="158" y="118" font-family="Work Sans" font-size="9" fill="#5B6472">Élevé</text>
     </svg>
-    """
+    """)
 
 
 if "user_id" not in st.session_state:
@@ -173,7 +188,7 @@ def appeler_api(methode: str, endpoint: str, **kwargs):
         return None, f"Erreur inattendue : {e}"
 
 
-st.markdown("""
+st.markdown(html("""
 <div class="boussole-hero">
     <svg class="boussole-hero-icon" viewBox="0 0 52 52">
         <circle cx="26" cy="26" r="24" fill="none" stroke="#12213D" stroke-width="2"/>
@@ -187,18 +202,18 @@ st.markdown("""
         <p class="boussole-hero-tagline">Ton copilote pour réussir tes démarches d'immigration et de bourses — Canada & France</p>
     </div>
 </div>
-""", unsafe_allow_html=True)
+"""), unsafe_allow_html=True)
 
 etape_1_active = "actif" if not st.session_state.resultat_scoring else ""
 etape_2_active = "actif" if st.session_state.resultat_scoring else ""
 
-st.markdown(f"""
+st.markdown(html(f"""
 <div class="boussole-steps">
     <div class="boussole-step {etape_1_active}"><span class="boussole-step-num">01</span>Ton profil</div>
     <div class="boussole-step {etape_2_active}"><span class="boussole-step-num">02</span>Tes chances</div>
     <div class="boussole-step {etape_2_active}"><span class="boussole-step-num">03</span>Documents</div>
 </div>
-""", unsafe_allow_html=True)
+"""), unsafe_allow_html=True)
 
 st.markdown('<div class="boussole-card">', unsafe_allow_html=True)
 st.markdown("##### Parle-moi de toi")
@@ -306,13 +321,13 @@ if st.session_state.resultat_scoring:
         statut = "✅" if c["rempli"] else "❌"
         eliminatoire_tag = '<span class="tag-eliminatoire">Éliminatoire</span>' if c["eliminatoire"] else ""
         explication_html = f'<div class="critere-explication">{c["explication"]}</div>' if c["explication"] else ""
-        st.markdown(f"""
+        st.markdown(html(f"""
         <div class="critere-ligne">
             <div class="critere-titre">{statut} {c['libelle']}{eliminatoire_tag}</div>
             <div class="critere-detail">Requis : {c['valeur_requise']} · Toi : {c['valeur_utilisateur'] or 'non renseigné'}</div>
             {explication_html}
         </div>
-        """, unsafe_allow_html=True)
+        """), unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="boussole-card">', unsafe_allow_html=True)
@@ -325,12 +340,12 @@ if st.session_state.resultat_scoring:
         classe_impact = {"Fort": "impact-fort", "Moyen": "impact-moyen", "Faible": "impact-faible"}.get(impact, "impact-moyen")
         delai = action.get("delai_estime", "")
         delai_html = f' <span style="color:var(--ink-muted); font-size:0.82rem;">· {delai}</span>' if delai else ""
-        st.markdown(f"""
+        st.markdown(html(f"""
         <div class="action-coaching">
             <span class="action-impact {classe_impact}">{impact}</span>
             <span>{action['action']}{delai_html}</span>
         </div>
-        """, unsafe_allow_html=True)
+        """), unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     resultat_checklist, erreur = appeler_api(
@@ -344,18 +359,19 @@ if st.session_state.resultat_scoring:
         for doc in resultat_checklist["documents"]:
             tag_classe = "doc-obligatoire" if doc["obligatoire"] else "doc-optionnel"
             tag_texte = "Obligatoire" if doc["obligatoire"] else "Optionnel"
-            delai_html = f'<div class="doc-remarque">⏱ {doc["delai_obtention_estime"]}</div>' if doc["delai_obtention_estime"] else ""
-            remarque_html = f'<div class="doc-remarque">{doc["remarque"]}</div>' if doc["remarque"] else ""
-            st.markdown(f"""
-            <div class="doc-ligne">
-                <div>
-                    <div class="doc-nom">{doc['document']}</div>
-                    {delai_html}
-                    {remarque_html}
-                </div>
-                <span class="doc-tag {tag_classe}">{tag_texte}</span>
-            </div>
-            """, unsafe_allow_html=True)
+            sous_lignes = ""
+            if doc["delai_obtention_estime"]:
+                sous_lignes += f'<div class="doc-remarque">⏱ {doc["delai_obtention_estime"]}</div>'
+            if doc["remarque"]:
+                sous_lignes += f'<div class="doc-remarque">{doc["remarque"]}</div>'
+            # Construit la ligne en une seule chaîne sans saut de ligne : une ligne vide
+            # au milieu d'un bloc HTML injecté via st.markdown casse le parsing Markdown
+            # et fait apparaître les balises suivantes en texte brut (bug déjà rencontré).
+            html_doc = (
+                f'<div class="doc-ligne"><div><div class="doc-nom">{doc["document"]}</div>'
+                f'{sous_lignes}</div><span class="doc-tag {tag_classe}">{tag_texte}</span></div>'
+            )
+            st.markdown(html_doc, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("""
