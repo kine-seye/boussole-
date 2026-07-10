@@ -85,7 +85,20 @@ p, span, div, label { color: var(--ink) !important; }
 }
 .boussole-card-brass { border-left: 3px solid var(--brass); }
 
-.critere-ligne { padding: 0.85rem 0; border-bottom: 1px solid var(--border-soft); }
+.critere-ligne {
+    padding: 1rem 1.2rem;
+    border-radius: 8px;
+    background-color: #FFFFFF; /* Fond blanc pour détacher du fond crème */
+    border: 1px solid var(--border-soft);
+    margin-bottom: 0.8rem; /* Espace entre les critères */
+    transition: all 0.2s ease;
+}
+
+/* Effet au survol pour rendre l'application interactive */
+.critere-ligne:hover {
+    border-color: var(--brass); /* Le laiton s'active au survol */
+    transform: translateX(4px); /* Léger décalage dynamique */
+}
 .critere-ligne:last-child { border-bottom: none; }
 .critere-titre { font-weight: 600; font-size: 0.96rem; color: var(--ink) !important; }
 .critere-detail { color: var(--ink-muted) !important; font-size: 0.85rem; margin-top: 0.15rem; }
@@ -110,7 +123,9 @@ p, span, div, label { color: var(--ink) !important; }
 .doc-optionnel { background: rgba(91,100,114,0.1); color: var(--ink-muted) !important; }
 .doc-remarque { color: var(--ink-muted) !important; font-size: 0.8rem; margin-top: 0.2rem; }
 
-.stButton > button {
+/* 1. Cibler TOUS les boutons (Classiques et Formulaires) */
+.stButton > button, 
+.stFormSubmitButton > button {
     background: var(--brass) !important; 
     border-radius: 10px !important;
     border: none !important; 
@@ -119,20 +134,29 @@ p, span, div, label { color: var(--ink) !important; }
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
-/* Effet au survol : un peu plus clair */
-.stButton > button:hover {
+/* 2. Effet au survol global */
+.stButton > button:hover, 
+.stFormSubmitButton > button:hover {
     background: var(--brass-light) !important;
+    opacity: 1 !important; /* On remplace l'ancienne opacité par un comportement propre */
 }
 
-/* Effet au clic */
-.stButton > button:active {
+/* 3. Effet au clic global */
+.stButton > button:active, 
+.stFormSubmitButton > button:active {
     transform: scale(0.98);
 }
-.stButton > button:hover { opacity: 0.88; }
 
-.boussole-disclaimer {
-    color: var(--ink-muted); font-size: 0.78rem; line-height: 1.5;
-    padding: 1rem 0 2rem 0; border-top: 1px solid var(--border-soft); margin-top: 1.5rem;
+/* 4. Forcer la couleur du texte en blanc pur pour un contraste parfait */
+.stButton > button *, 
+.stFormSubmitButton > button * {
+    color: #FFFFFF !important;
+}
+
+/* 5. Optionnel : repasser le texte en indigo au survol si le fond laiton s'éclaircit */
+.stButton > button:hover *, 
+.stFormSubmitButton > button:hover * {
+    color: var(--ink) !important;
 }
 
 /* Widgets de formulaire : le thème sombre peut persister sur ces composants même
