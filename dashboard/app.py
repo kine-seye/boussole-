@@ -111,8 +111,22 @@ p, span, div, label { color: var(--ink) !important; }
 .doc-remarque { color: var(--ink-muted) !important; font-size: 0.8rem; margin-top: 0.2rem; }
 
 .stButton > button {
-    background: var(--ink) !important; color: var(--paper) !important; border-radius: 10px !important;
-    border: none !important; font-weight: 600 !important; padding: 0.65rem 1.2rem !important; transition: opacity 0.15s ease;
+    background: var(--brass) !important; 
+    border-radius: 10px !important;
+    border: none !important; 
+    font-weight: 600 !important; 
+    padding: 0.65rem 1.2rem !important; 
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+/* Effet au survol : un peu plus clair */
+.stButton > button:hover {
+    background: var(--brass-light) !important;
+}
+
+/* Effet au clic */
+.stButton > button:active {
+    transform: scale(0.98);
 }
 .stButton > button:hover { opacity: 0.88; }
 
