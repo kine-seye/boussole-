@@ -101,9 +101,30 @@ p, span, div, label { color: var(--ink) !important; }
 }
 .critere-ligne:last-child { border-bottom: none; }
 .critere-titre { font-weight: 600; font-size: 0.96rem; color: var(--ink) !important; }
-.critere-detail { color: var(--ink-muted) !important; font-size: 0.85rem; margin-top: 0.15rem; }
+.critere-detail {
+    font-family: 'Work Sans', sans-serif;
+    color: var(--ink-muted) !important;
+    font-size: 0.88rem;
+    margin-top: 0.35rem;
+    background: var(--paper); /* Un léger fond contrasté */
+    padding: 0.25rem 0.6rem;
+    border-radius: 5px;
+    display: inline-block; /* Pour ne pas prendre toute la largeur */
+}
 .critere-explication { color: var(--ink-muted) !important; font-size: 0.82rem; margin-top: 0.25rem; font-style: italic; }
-.tag-eliminatoire { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brick) !important; font-weight: 600; margin-left: 0.4rem; }
+.tag-eliminatoire {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--brick) !important;
+    background: rgba(180, 67, 47, 0.1); /* Fond rouge très léger */
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-left: 0.6rem;
+    font-weight: 600;
+    vertical-align: middle;
+}
 
 .action-coaching { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.6rem 0; }
 .action-coaching span { color: var(--ink) !important; }
