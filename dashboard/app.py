@@ -151,8 +151,18 @@ li[role="option"]:hover, li[aria-selected="true"] {
     background-color: #FFFFFF !important;
     color: var(--ink) !important;
 }
-.stButton > button, .stButton > button * {
+.stButton > button,
+.stButton > button div,
+.stButton > button p,
+.stButton > button span {
     color: var(--paper) !important;
+}
+[data-testid*="FileUploader"] section {
+    background-color: #FFFFFF !important;
+    border: 1px dashed var(--border-soft) !important;
+}
+[data-testid*="FileUploader"] section * {
+    color: var(--ink-muted) !important;
 }
 </style>
 """, unsafe_allow_html=True)
