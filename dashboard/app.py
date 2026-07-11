@@ -63,6 +63,19 @@ p, span, div, label { color: var(--ink) !important; }
 
 #MainMenu, footer {visibility: hidden;}
 
+/* Cartes natives Streamlit (st.container(border=True)) reskinnées avec notre palette,
+   au lieu d'un bricolage <div> ouvert/fermé sur deux appels st.markdown séparés
+   (qui produisait des boîtes vides fantômes, Streamlit isolant chaque appel dans
+   son propre conteneur DOM). */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border: 1px solid var(--border-soft) !important;
+    border-radius: 14px !important;
+    background: white !important;
+}
+[data-testid="stVerticalBlockBorderWrapper"]:has(.boussole-card-brass-marker) {
+    border-left: 3px solid var(--brass) !important;
+}
+
 .boussole-hero {
     display: flex; align-items: center; gap: 1.1rem;
     padding: 1.6rem 0 0.4rem 0; border-bottom: 1px solid var(--border-soft); margin-bottom: 1.6rem;
@@ -79,37 +92,28 @@ p, span, div, label { color: var(--ink) !important; }
 .boussole-step.actif, .boussole-step.actif * { background: var(--ink); border-color: var(--ink); color: var(--paper) !important; }
 .boussole-step-num { font-family: 'IBM Plex Mono', monospace; font-weight: 500; opacity: 0.6; margin-right: 0.4rem; }
 
-.boussole-card {
-    background: white; border: 1px solid var(--border-soft); border-radius: 14px;
-    padding: 1.4rem 1.6rem; margin-bottom: 1.2rem;
-}
-.boussole-card-brass { border-left: 3px solid var(--brass); }
-
 .critere-ligne {
     padding: 1rem 1.2rem;
     border-radius: 8px;
-    background-color: #FFFFFF; /* Fond blanc pour détacher du fond crème */
+    background-color: #FFFFFF;
     border: 1px solid var(--border-soft);
-    margin-bottom: 0.8rem; /* Espace entre les critères */
+    margin-bottom: 0.8rem;
     transition: all 0.2s ease;
 }
-
-/* Effet au survol pour rendre l'application interactive */
 .critere-ligne:hover {
-    border-color: var(--brass); /* Le laiton s'active au survol */
-    transform: translateX(4px); /* Léger décalage dynamique */
+    border-color: var(--brass);
+    transform: translateX(4px);
 }
-.critere-ligne:last-child { border-bottom: none; }
 .critere-titre { font-weight: 600; font-size: 0.96rem; color: var(--ink) !important; }
 .critere-detail {
     font-family: 'Work Sans', sans-serif;
     color: var(--ink-muted) !important;
     font-size: 0.88rem;
     margin-top: 0.35rem;
-    background: var(--paper); /* Un léger fond contrasté */
+    background: var(--paper);
     padding: 0.25rem 0.6rem;
     border-radius: 5px;
-    display: inline-block; /* Pour ne pas prendre toute la largeur */
+    display: inline-block;
 }
 .critere-explication { color: var(--ink-muted) !important; font-size: 0.82rem; margin-top: 0.25rem; font-style: italic; }
 .tag-eliminatoire {
@@ -118,7 +122,7 @@ p, span, div, label { color: var(--ink) !important; }
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--brick) !important;
-    background: rgba(180, 67, 47, 0.1); /* Fond rouge très léger */
+    background: rgba(180, 67, 47, 0.1);
     padding: 0.15rem 0.5rem;
     border-radius: 4px;
     margin-left: 0.6rem;
@@ -144,44 +148,34 @@ p, span, div, label { color: var(--ink) !important; }
 .doc-optionnel { background: rgba(91,100,114,0.1); color: var(--ink-muted) !important; }
 .doc-remarque { color: var(--ink-muted) !important; font-size: 0.8rem; margin-top: 0.2rem; }
 
-/* 1. Cibler TOUS les boutons (Classiques et Formulaires) */
-.stButton > button, 
+.stButton > button,
 .stFormSubmitButton > button {
-    background: var(--brass) !important; 
+    background: var(--brass) !important;
     border-radius: 10px !important;
-    border: none !important; 
-    font-weight: 600 !important; 
-    padding: 0.65rem 1.2rem !important; 
+    border: none !important;
+    font-weight: 600 !important;
+    padding: 0.65rem 1.2rem !important;
     transition: background 0.2s ease, transform 0.1s ease;
 }
-
-/* 2. Effet au survol global */
-.stButton > button:hover, 
+.stButton > button:hover,
 .stFormSubmitButton > button:hover {
     background: var(--brass-light) !important;
-    opacity: 1 !important; /* On remplace l'ancienne opacité par un comportement propre */
 }
-
-/* 3. Effet au clic global */
-.stButton > button:active, 
+.stButton > button:active,
 .stFormSubmitButton > button:active {
     transform: scale(0.98);
 }
-
-/* 4. Forcer la couleur du texte en blanc pur pour un contraste parfait */
-.stButton > button *, 
-.stFormSubmitButton > button * {
+.stButton > button,
+.stButton > button div,
+.stButton > button p,
+.stButton > button span,
+.stFormSubmitButton > button,
+.stFormSubmitButton > button div,
+.stFormSubmitButton > button p,
+.stFormSubmitButton > button span {
     color: #FFFFFF !important;
 }
 
-/* 5. Optionnel : repasser le texte en indigo au survol si le fond laiton s'éclaircit */
-.stButton > button:hover *, 
-.stFormSubmitButton > button:hover * {
-    color: var(--ink) !important;
-}
-
-/* Widgets de formulaire : le thème sombre peut persister sur ces composants même
-   quand le fond général de page est clair -> on force fond blanc + texte lisible. */
 input, textarea, select {
     background-color: #FFFFFF !important;
     color: var(--ink) !important;
@@ -210,18 +204,17 @@ li[role="option"]:hover, li[aria-selected="true"] {
     background-color: #FFFFFF !important;
     color: var(--ink) !important;
 }
-.stButton > button,
-.stButton > button div,
-.stButton > button p,
-.stButton > button span {
-    color: var(--paper) !important;
-}
 [data-testid*="FileUploader"] section {
     background-color: #FFFFFF !important;
     border: 1px dashed var(--border-soft) !important;
 }
 [data-testid*="FileUploader"] section * {
     color: var(--ink-muted) !important;
+}
+
+.boussole-disclaimer {
+    color: var(--ink-muted) !important; font-size: 0.78rem; line-height: 1.5;
+    padding: 1rem 0 2rem 0; border-top: 1px solid var(--border-soft); margin-top: 1.5rem;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -318,33 +311,32 @@ st.markdown(html(f"""
 </div>
 """), unsafe_allow_html=True)
 
-st.markdown('<div class="boussole-card">', unsafe_allow_html=True)
-st.markdown("##### Parle-moi de toi")
-st.caption("Ces informations restent privées et servent uniquement à évaluer tes chances.")
+# --- CARTE PROFIL (st.container(border=True) natif : plus de div ouvert/fermé bricolé) ---
+with st.container(border=True):
+    st.markdown("##### Parle-moi de toi")
+    st.caption("Ces informations restent privées et servent uniquement à évaluer tes chances.")
 
-with st.form("form_profil"):
-    col1, col2 = st.columns(2)
-    with col1:
-        whatsapp = st.text_input("Numéro WhatsApp (identifiant)", placeholder="221771234567")
-        age = st.number_input("Âge", min_value=15, max_value=80, value=25)
-        niveau_diplome = st.selectbox("Niveau de diplôme", NIVEAUX_DIPLOME, index=2)
-        domaine_etude = st.text_input("Domaine d'étude", placeholder="Informatique de Gestion")
-    with col2:
-        annees_experience = st.number_input("Années d'expérience", min_value=0.0, max_value=50.0, value=1.0, step=0.5)
-        capacite_financiere = st.number_input("Capacité financière (FCFA)", min_value=0, value=10_000_000, step=500_000)
-        niveau_anglais = st.selectbox("Niveau d'anglais", NIVEAUX_LANGUE, index=4)
-        niveau_francais = st.selectbox("Niveau de français", NIVEAUX_LANGUE, index=6)
+    with st.form("form_profil"):
+        col1, col2 = st.columns(2)
+        with col1:
+            whatsapp = st.text_input("Numéro WhatsApp (identifiant)", placeholder="221771234567")
+            age = st.number_input("Âge", min_value=15, max_value=80, value=25)
+            niveau_diplome = st.selectbox("Niveau de diplôme", NIVEAUX_DIPLOME, index=2)
+            domaine_etude = st.text_input("Domaine d'étude", placeholder="Informatique de Gestion")
+        with col2:
+            annees_experience = st.number_input("Années d'expérience", min_value=0.0, max_value=50.0, value=1.0, step=0.5)
+            capacite_financiere = st.number_input("Capacité financière (FCFA)", min_value=0, value=10_000_000, step=500_000)
+            niveau_anglais = st.selectbox("Niveau d'anglais", NIVEAUX_LANGUE, index=4)
+            niveau_francais = st.selectbox("Niveau de français", NIVEAUX_LANGUE, index=6)
 
-    st.markdown("**Ta cible**")
-    col3, col4 = st.columns(2)
-    with col3:
-        pays_cible = st.selectbox("Pays visé", PAYS_DISPONIBLES)
-    with col4:
-        demarche_label = st.selectbox("Type de démarche", list(DEMARCHES_DISPONIBLES.keys()))
+        st.markdown("**Ta cible**")
+        col3, col4 = st.columns(2)
+        with col3:
+            pays_cible = st.selectbox("Pays visé", PAYS_DISPONIBLES)
+        with col4:
+            demarche_label = st.selectbox("Type de démarche", list(DEMARCHES_DISPONIBLES.keys()))
 
-    submit_profil = st.form_submit_button("Enregistrer mon profil et évaluer mes chances", use_container_width=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
+        submit_profil = st.form_submit_button("Enregistrer mon profil et évaluer mes chances", use_container_width=True)
 
 if submit_profil:
     if not whatsapp:
@@ -402,54 +394,51 @@ if st.session_state.user_id:
 if st.session_state.resultat_scoring:
     r = st.session_state.resultat_scoring
 
-    st.markdown('<div class="boussole-card boussole-card-brass">', unsafe_allow_html=True)
-    st.markdown("##### Tes chances estimées")
-    st.markdown(cadran_boussole(r["tranche"]), unsafe_allow_html=True)
-    st.markdown(
-        f'<p style="text-align:center; font-family:Fraunces,serif; font-size:1.4rem; '
-        f'font-weight:600; margin-top:0.5rem;">{r["tranche"]}</p>',
-        unsafe_allow_html=True,
-    )
-
-    if not r["eligible"]:
-        st.warning(
-            "Au moins un critère éliminatoire n'est pas rempli : "
-            + ", ".join(r["criteres_manquants_eliminatoires"])
+    with st.container(border=True):
+        st.markdown('<span class="boussole-card-brass-marker" style="display:none;"></span>', unsafe_allow_html=True)
+        st.markdown("##### Tes chances estimées")
+        st.markdown(cadran_boussole(r["tranche"]), unsafe_allow_html=True)
+        st.markdown(
+            f'<p style="text-align:center; font-family:Fraunces,serif; font-size:1.4rem; '
+            f'font-weight:600; margin-top:0.5rem;">{r["tranche"]}</p>',
+            unsafe_allow_html=True,
         )
-    st.markdown('</div>', unsafe_allow_html=True)
+        if not r["eligible"]:
+            st.warning(
+                "Au moins un critère éliminatoire n'est pas rempli : "
+                + ", ".join(r["criteres_manquants_eliminatoires"])
+            )
 
-    st.markdown('<div class="boussole-card">', unsafe_allow_html=True)
-    st.markdown("##### Détail par critère")
-    for c in r["criteres"]:
-        statut = "✅" if c["rempli"] else "❌"
-        eliminatoire_tag = '<span class="tag-eliminatoire">Éliminatoire</span>' if c["eliminatoire"] else ""
-        explication_html = f'<div class="critere-explication">{c["explication"]}</div>' if c["explication"] else ""
-        st.markdown(html(f"""
-        <div class="critere-ligne">
+    with st.container(border=True):
+        st.markdown("##### Détail par critère")
+        for c in r["criteres"]:
+            statut = "✅" if c["rempli"] else "❌"
+            eliminatoire_tag = '<span class="tag-eliminatoire">Éliminatoire</span>' if c["eliminatoire"] else ""
+            explication_html = f'<div class="critere-explication">{c["explication"]}</div>' if c["explication"] else ""
+            st.markdown(html(f"""
+            <div class="critere-ligne">
             <div class="critere-titre">{statut} {c['libelle']}{eliminatoire_tag}</div>
             <div class="critere-detail">Requis : {c['valeur_requise']} · Toi : {c['valeur_utilisateur'] or 'non renseigné'}</div>
             {explication_html}
-        </div>
-        """), unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+            </div>
+            """), unsafe_allow_html=True)
 
-    st.markdown('<div class="boussole-card">', unsafe_allow_html=True)
-    st.markdown("##### Ton plan d'action")
-    plan = r["plan_coaching"]
-    if plan.get("message_general"):
-        st.markdown(f'<p style="color:var(--ink-muted); font-size:0.92rem;">{plan["message_general"]}</p>', unsafe_allow_html=True)
-    for action in plan.get("actions", []):
-        impact = action.get("impact", "Moyen")
-        classe_impact = {"Fort": "impact-fort", "Moyen": "impact-moyen", "Faible": "impact-faible"}.get(impact, "impact-moyen")
-        delai = action.get("delai_estime", "")
-        delai_html = f' <span style="color:var(--ink-muted); font-size:0.82rem;">· {delai}</span>' if delai else ""
-        st.markdown(html(f"""
-        <div class="action-coaching">
+    with st.container(border=True):
+        st.markdown("##### Ton plan d'action")
+        plan = r["plan_coaching"]
+        if plan.get("message_general"):
+            st.markdown(f'<p style="color:var(--ink-muted); font-size:0.92rem;">{plan["message_general"]}</p>', unsafe_allow_html=True)
+        for action in plan.get("actions", []):
+            impact = action.get("impact", "Moyen")
+            classe_impact = {"Fort": "impact-fort", "Moyen": "impact-moyen", "Faible": "impact-faible"}.get(impact, "impact-moyen")
+            delai = action.get("delai_estime", "")
+            delai_html = f' <span style="color:var(--ink-muted); font-size:0.82rem;">· {delai}</span>' if delai else ""
+            st.markdown(html(f"""
+            <div class="action-coaching">
             <span class="action-impact {classe_impact}">{impact}</span>
             <span>{action['action']}{delai_html}</span>
-        </div>
-        """), unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+            </div>
+            """), unsafe_allow_html=True)
 
     resultat_checklist, erreur = appeler_api(
         "GET", f"/checklist?pays={r['pays']}&type_demarche={r['type_demarche']}"
@@ -457,25 +446,21 @@ if st.session_state.resultat_scoring:
     if erreur:
         st.error(erreur)
     else:
-        st.markdown('<div class="boussole-card">', unsafe_allow_html=True)
-        st.markdown("##### Documents à préparer")
-        for doc in resultat_checklist["documents"]:
-            tag_classe = "doc-obligatoire" if doc["obligatoire"] else "doc-optionnel"
-            tag_texte = "Obligatoire" if doc["obligatoire"] else "Optionnel"
-            sous_lignes = ""
-            if doc["delai_obtention_estime"]:
-                sous_lignes += f'<div class="doc-remarque">⏱ {doc["delai_obtention_estime"]}</div>'
-            if doc["remarque"]:
-                sous_lignes += f'<div class="doc-remarque">{doc["remarque"]}</div>'
-            # Construit la ligne en une seule chaîne sans saut de ligne : une ligne vide
-            # au milieu d'un bloc HTML injecté via st.markdown casse le parsing Markdown
-            # et fait apparaître les balises suivantes en texte brut (bug déjà rencontré).
-            html_doc = (
-                f'<div class="doc-ligne"><div><div class="doc-nom">{doc["document"]}</div>'
-                f'{sous_lignes}</div><span class="doc-tag {tag_classe}">{tag_texte}</span></div>'
-            )
-            st.markdown(html_doc, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("##### Documents à préparer")
+            for doc in resultat_checklist["documents"]:
+                tag_classe = "doc-obligatoire" if doc["obligatoire"] else "doc-optionnel"
+                tag_texte = "Obligatoire" if doc["obligatoire"] else "Optionnel"
+                sous_lignes = ""
+                if doc["delai_obtention_estime"]:
+                    sous_lignes += f'<div class="doc-remarque">⏱ {doc["delai_obtention_estime"]}</div>'
+                if doc["remarque"]:
+                    sous_lignes += f'<div class="doc-remarque">{doc["remarque"]}</div>'
+                html_doc = (
+                    f'<div class="doc-ligne"><div><div class="doc-nom">{doc["document"]}</div>'
+                    f'{sous_lignes}</div><span class="doc-tag {tag_classe}">{tag_texte}</span></div>'
+                )
+                st.markdown(html_doc, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="boussole-disclaimer">
