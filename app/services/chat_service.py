@@ -43,16 +43,18 @@ def _construire_contexte(db: Session, user_id) -> str:
     if not profile:
         return "Aucun profil enregistré pour cet utilisateur pour l'instant."
 
-    morceaux = [f"PROFIL DE L'UTILISATEUR :\n{json.dumps({
-        'age': profile.age,
-        'niveau_diplome': profile.niveau_diplome,
-        'domaine_etude': profile.domaine_etude,
-        'annees_experience': profile.annees_experience,
-        'langues': profile.langues,
-        'capacite_financiere_fcfa': profile.capacite_financiere_fcfa,
-        'pays_cible': profile.pays_cible,
-        'type_demarche': profile.type_demarche,
-    }, ensure_ascii=False, indent=2)}"]
+    profil_dict = {
+        "age": profile.age,
+        "niveau_diplome": profile.niveau_diplome,
+        "domaine_etude": profile.domaine_etude,
+        "annees_experience": profile.annees_experience,
+        "langues": profile.langues,
+        "capacite_financiere_fcfa": profile.capacite_financiere_fcfa,
+        "pays_cible": profile.pays_cible,
+        "type_demarche": profile.type_demarche,
+    }
+    profil_json = json.dumps(profil_dict, ensure_ascii=False, indent=2)
+    morceaux = [f"PROFIL DE L'UTILISATEUR :\n{profil_json}"]
 
     if profile.pays_cible and profile.type_demarche:
         criteres = (
