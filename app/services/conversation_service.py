@@ -11,6 +11,7 @@ from app.models.user import User, UserProfile
 from app.services.scoring_service import calculer_score
 from app.services.coach_service import generer_plan_coaching
 from app.services.checklist_service import obtenir_checklist
+from app.services.chat_service import poser_question
 
 NIVEAUX_DIPLOME_VALIDES = {"bac": "Bac", "bac+2": "Bac+2", "licence": "Licence", "master": "Master", "doctorat": "Doctorat"}
 NIVEAUX_LANGUE_VALIDES = {"a1", "a2", "b1", "b2", "c1", "c2"}
@@ -167,6 +168,7 @@ def _formater_reponse_finale(resultat_scoring, plan_coaching, checklist) -> str:
     lignes.append("")
     lignes.append("_⚠️ Informations indicatives — vérifie toujours les exigences officielles à jour._")
     lignes.append("_Tape 'recommencer' pour refaire une évaluation._")
+    lignes.append("_Tu peux aussi me poser directement une question sur ton dossier._")
 
     return "\n".join(lignes)
 
@@ -203,7 +205,13 @@ def traiter_message_entrant(db: Session, numero: str, texte_message: str) -> str
         )
 
     if etat.etape_courante == "termine":
-        return "Ton évaluation est terminée ✅. Tape 'recommencer' pour une nouvelle évaluation."
+        # Une fois l'évaluation faite, tout message libre (hors 'recommencer', déjà géré
+        # plus haut) est traité comme une question au chatbot, ancré sur le profil déjà
+        # enregistré de cet utilisateur.
+        user = db.query(User).filter(User.whatsapp_number == numero).first()
+        if not user:
+            return "Erreur : profil introuvable. Tape 'recommencer' pour refaire une évaluation."
+        return poser_question(db, user.id, texte_message)
 
     # Valide la réponse à l'étape courante
     valide, valeur_normalisee, message_erreur = _valider_reponse(etat.etape_courante, texte_message)

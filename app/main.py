@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import profile_router, cv_router, scoring_router, checklist_router, whatsapp_router
+from app.routers import profile_router, cv_router, scoring_router, checklist_router, whatsapp_router, chat_router
 
 settings = get_settings()
 
@@ -27,6 +27,7 @@ app.include_router(cv_router.router)
 app.include_router(scoring_router.router)
 app.include_router(checklist_router.router)
 app.include_router(whatsapp_router.router)
+app.include_router(chat_router.router)
 
 
 @app.get("/")

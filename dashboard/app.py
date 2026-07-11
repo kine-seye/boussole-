@@ -462,6 +462,47 @@ if st.session_state.resultat_scoring:
                 )
                 st.markdown(html_doc, unsafe_allow_html=True)
 
+# ============================================================
+# CHATBOT — questions libres, ancrées sur le profil/critères/checklist
+# ============================================================
+if st.session_state.user_id:
+    st.markdown("##### 💬 Une question ?")
+    st.caption("Pose n'importe quelle question sur ton dossier — l'assistant s'appuie sur ton profil et les critères réels, jamais d'invention.")
+
+    if "chat_charge" not in st.session_state:
+        st.session_state.chat_charge = False
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = []
+
+    # Charge l'historique une seule fois par session (pas à chaque rerun)
+    if not st.session_state.chat_charge:
+        historique, erreur_hist = appeler_api("GET", f"/chat/history/{st.session_state.user_id}")
+        if not erreur_hist and historique:
+            st.session_state.chat_messages = historique["messages"]
+        st.session_state.chat_charge = True
+
+    for msg in st.session_state.chat_messages:
+        with st.chat_message(msg["role"]):
+            st.write(msg["contenu"])
+
+    question = st.chat_input("Écris ta question ici...")
+    if question:
+        st.session_state.chat_messages.append({"role": "user", "contenu": question})
+        with st.chat_message("user"):
+            st.write(question)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Réflexion..."):
+                resultat_chat, erreur_chat = appeler_api(
+                    "POST", "/chat",
+                    json={"user_id": st.session_state.user_id, "message": question},
+                )
+            if erreur_chat:
+                st.error(erreur_chat)
+            else:
+                st.write(resultat_chat["reponse"])
+                st.session_state.chat_messages.append({"role": "assistant", "contenu": resultat_chat["reponse"]})
+
 st.markdown("""
 <div class="boussole-disclaimer">
     Ces informations sont indicatives et générées automatiquement. Vérifie toujours les exigences
