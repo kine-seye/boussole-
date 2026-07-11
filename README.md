@@ -1,63 +1,70 @@
-#  Boussole
+# 🧭 Boussole
 
-**Agent IA d'évaluation des chances d'immigration et de bourses d'études, pour les candidats sénégalais visant le Canada et la France.**
+Agent d'évaluation des chances d'immigration et de bourses d'études (Canada, France)
+pour candidats sénégalais. Profil (ou CV) → score par critère → plan de coaching
+personnalisé (IA) → checklist documentaire — accessible en ligne via web ou WhatsApp.
 
-Boussole analyse le profil et le CV d'un candidat, calcule un score de chances par pays et par type de démarche (visa étudiant, bourse), puis génère un plan de coaching personnalisé et une checklist des documents à préparer.
+## 🔗 Liens
 
-##  Le problème résolu
+- **Dashboard en ligne** : [tyz3i2ne3seihunkyyrswm.streamlit.app](https://tyz3i2ne3seihunkyyrswm.streamlit.app)
+- **API backend** : [boussole-api-fusi.onrender.com/docs](https://boussole-api-fusi.onrender.com/docs)
 
-Chaque année, des milliers d'étudiants sénégalais envisagent une immigration ou une bourse vers le Canada ou la France, sans avoir accès à une évaluation fiable de leurs chances réelles ni à un accompagnement structuré. Boussole automatise cette première évaluation, habituellement réservée à des consultations payantes en agence.
+> ⚠️ Le backend tourne sur un plan gratuit Render : il se met en veille après inactivité,
+> la première requête peut prendre jusqu'à 50 secondes à répondre.
 
-## ⚙️ Comment ça fonctionne
+## Fonctionnalités
 
-1. Le candidat renseigne son profil (âge, diplôme, expérience, langues, capacité financière) et son objectif (pays + type de démarche)
-2. Le moteur de scoring évalue chaque critère d'éligibilité et calcule une tranche de chances (Élevé / Moyen / Faible)
-3. Un coach IA (Groq / Llama 3.3 70B) génère des recommandations personnalisées pour améliorer le dossier
-4. Une checklist documentaire est fournie selon le pays et la démarche choisie
+- **Profil déclaratif + extraction CV** (PDF) via LLM, fusionnés intelligemment
+- **Scoring par critère** (✅/❌) pondéré, avec détection des critères éliminatoires
+- **Coach IA** (Groq / Llama 3.3 70B) : plan d'action priorisé par impact, pas juste un score brut
+- **Checklist documentaire** par pays et type de démarche
+- **Dashboard web** avec identité visuelle propre (cadran de boussole SVG pour visualiser
+  les chances en tranche Faible/Moyen/Élevé — jamais un faux score numérique précis)
+- **Intégration WhatsApp** (Meta Cloud API) : conversation guidée étape par étape — *en pause,
+  en attente d'un numéro dédié*
 
-##  Stack technique
+## Stack technique
 
-- **Backend** : FastAPI (Python)
-- **Base de données** : PostgreSQL, migrations gérées avec Alembic
-- **IA** : Groq API (Llama 3.3 70B) pour le coaching et l'extraction de CV
-- **Interface** : Streamlit (dashboard à venir)
-- **Canal utilisateur** : WhatsApp Cloud API (intégration à venir)
-- **Déploiement** : Render
+| Composant | Techno |
+|---|---|
+| Backend API | FastAPI + SQLAlchemy + Alembic |
+| Base de données | PostgreSQL (Render) |
+| LLM | Groq (Llama 3.3 70B) |
+| Dashboard | Streamlit (Streamlit Community Cloud) |
+| Messagerie | Meta WhatsApp Cloud API |
+| Extraction CV | pdfplumber + LLM |
+| Déploiement | Render (API + DB) + Streamlit Cloud (dashboard) |
 
-##  État actuel du projet (Phase 1 — MVP)
+## Scope actuel
 
-- ✅ Pipeline complet testé de bout en bout (migrations, seed, API, requêtes réelles)
-- ✅ Scoring fonctionnel pour Canada et France (visa étudiant + bourse)
-- ✅ API testable directement via Swagger (`/docs`)
--  Intégration WhatsApp (réutilisation de l'infrastructure du bot Sefa Bien-être)
--  Dashboard Streamlit
--  Génération automatique de CV et lettre de motivation (Phase 2)
+Canada et France, visa étudiant et bourse d'études. Conçu pour être étendu facilement
+(nouveau pays/démarche = nouvelles lignes dans `countries_criteria` et `documents_checklist`,
+aucun changement de code).
 
-##  Installation et test local
+---
 
-<details>
-<summary>Cliquer pour déplier les instructions complètes</summary>
+## Installation locale (développement)
 
 ### Prérequis
 - Python 3.11+
 - PostgreSQL 14+
-- Un compte [Groq](https://console.groq.com) pour la clé API
+- Un compte [Groq](https://console.groq.com) (clé API gratuite)
 
-### Installation
+### 1. Installation
 ```bash
 cd boussole
 python3 -m venv venv
-source venv/bin/activate  # Windows : venv\Scripts\activate
+source venv/bin/activate          # Windows : venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Configuration
+### 2. Configuration
 ```bash
 cp .env.example .env
 ```
-Renseigne `DATABASE_URL` et `GROQ_API_KEY` dans `.env`.
+Renseigne au minimum `DATABASE_URL` et `GROQ_API_KEY` dans `.env`.
 
-### Base de données
+### 3. Base de données
 ```bash
 sudo -u postgres psql -c "CREATE USER boussole_user WITH PASSWORD 'TON_MOT_DE_PASSE';"
 sudo -u postgres psql -c "CREATE DATABASE boussole_db OWNER boussole_user;"
@@ -65,15 +72,52 @@ alembic upgrade head
 PYTHONPATH=. python3 seeds/seed_criteria.py
 ```
 
-### Lancement
+### 4. Lancer le backend
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
-Interface Swagger disponible sur `http://localhost:8000/docs`
+→ Doc interactive sur `http://localhost:8000/docs`
 
-</details>
+### 5. Lancer le dashboard (terminal séparé)
+```bash
+streamlit run dashboard/app.py
+```
+→ `http://localhost:8501`
 
-##  Auteure
+## Structure du projet
 
-**Kiné Seye** — Data Scientist & AI Developer, Dakar, Sénégal
-[LinkedIn](https://www.linkedin.com/in/kine-seye-b513b13ba) · [GitHub](https://github.com/kine-seye)
+```
+boussole/
+├── app/
+│   ├── models/          # User, UserProfile, CountryCriteria, DocumentChecklist, ConversationState
+│   ├── routers/          # profile, cv, scoring, checklist, whatsapp
+│   ├── services/          # scoring, coach (LLM), cv extraction, whatsapp, conversation
+│   └── main.py
+├── dashboard/
+│   └── app.py            # Interface Streamlit
+├── alembic/               # Migrations
+├── seeds/                 # Peuplement des critères pays/démarches
+└── requirements.txt
+```
+
+## Points de conception notables
+
+- **Aucun score numérique précis affiché à l'utilisateur** — seulement une tranche
+  qualitative (Faible/Moyen/Élevé), pour éviter une fausse impression de certitude
+  scientifique sur un sujet à fort enjeu (immigration).
+- **Le CV enrichit le profil sans jamais écraser une déclaration manuelle** de l'utilisateur.
+- **Coach avec fallback déterministe** : si l'appel LLM échoue, un plan d'action basique
+  (trié par poids des critères manquants) est généré à la place — jamais de plantage silencieux.
+
+## Roadmap
+
+- [x] Phase 1 — MVP : scoring, coach, checklist, CV, dashboard, déploiement
+- [ ] Connexion WhatsApp (bloqué : en attente d'un numéro dédié)
+- [ ] Génération de CV / lettre de motivation adaptés (Phase 2)
+- [ ] Suivi de candidatures, alertes personnalisées (Phase 3)
+- [ ] Extension à d'autres pays/démarches
+
+## Auteure
+
+[Kiné Seye](https://www.linkedin.com/in/kine-seye-b513b13ba) — Data Scientist & AI Developer,
+Dakar, Sénégal.
