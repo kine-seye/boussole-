@@ -14,6 +14,8 @@ from app.config import get_settings
 from app.models.chat import ChatMessage
 from app.models.user import User, UserProfile
 from app.models.criteria import CountryCriteria, DocumentChecklist
+from app.models.faq import FAQEntry
+from app.services.web_search_service import rechercher_web
 
 settings = get_settings()
 
@@ -24,12 +26,20 @@ candidats sénégalais à évaluer leurs chances d'obtenir un visa étudiant ou 
 
 RÈGLE LA PLUS IMPORTANTE — DISTINCTION OBLIGATOIRE DES SOURCES :
 Tu dois TOUJOURS distinguer clairement deux types d'informations dans ta réponse :
-1. Ce qui vient du CONTEXTE fourni ci-dessous (profil, critères, checklist) — c'est vérifié et fiable.
+1. Ce qui vient du CONTEXTE fourni ci-dessous (profil, critères, checklist, LIENS OFFICIELS
+   VÉRIFIÉS) — c'est vérifié et fiable. Les liens officiels listés dans le contexte doivent être
+   partagés DIRECTEMENT et SANS HÉSITATION quand ils sont pertinents pour la question — ne
+   dis JAMAIS "je ne peux pas fournir de lien" si un lien pertinent existe dans le contexte.
+   Faciliter la recherche de l'utilisateur fait partie de ton rôle : ne le renvoie pas à "chercher
+   sur un moteur de recherche" quand tu as déjà le lien exact sous la main.
 2. Ce qui vient de ta connaissance générale (noms d'universités, montants de frais de visa non \
-listés dans le contexte, délais non précisés, etc.) — ce n'est PAS vérifié par Boussole.
+listés dans le contexte, délais non précisés, liens que tu ne peux pas confirmer, etc.) — ce \
+n'est PAS vérifié par Boussole.
 
 Pour TOUTE information de type 2 (pas dans le contexte), tu DOIS :
-- Soit refuser de donner un chiffre précis et rediriger vers la source officielle.
+- Soit refuser de donner un chiffre précis et rediriger vers la source officielle générale du pays
+  concerné (ex: le lien officiel du contexte s'il existe pour ce pays, même s'il ne couvre pas
+  exactement la question) plutôt que de dire simplement "cherche toi-même".
 - Soit, si tu donnes quand même une réponse générale utile (ex: noms d'universités connues), \
   terminer explicitement cette partie par : "⚠️ Info non vérifiée dans la base Boussole — \
   confirme sur le site officiel avant de t'y fier."
@@ -81,6 +91,14 @@ def _construire_contexte(db: Session, user_id) -> str:
             for c in criteres
         ))
 
+        liens_officiels = sorted({c.source_officielle for c in criteres if c.source_officielle})
+        if liens_officiels:
+            morceaux.append(
+                "LIENS OFFICIELS VÉRIFIÉS (tu peux les partager directement et avec confiance, "
+                "ce sont des sources fiables déjà vérifiées par Boussole, pas besoin d'avertissement "
+                "dessus) :\n" + "\n".join(f"- {lien}" for lien in liens_officiels)
+            )
+
         documents = (
             db.query(DocumentChecklist)
             .filter(DocumentChecklist.pays == profile.pays_cible, DocumentChecklist.type_demarche == profile.type_demarche)
@@ -92,13 +110,32 @@ def _construire_contexte(db: Session, user_id) -> str:
             for d in documents
         ))
 
+        faqs = (
+            db.query(FAQEntry)
+            .filter(
+                FAQEntry.pays == profile.pays_cible,
+                (FAQEntry.type_demarche == profile.type_demarche) | (FAQEntry.type_demarche.is_(None)),
+            )
+            .all()
+        )
+        if faqs:
+            morceaux.append(
+                "FAQ VÉRIFIÉE (réponses confirmées avec source officielle, utilisable directement "
+                "sans avertissement — indique la date de vérification si pertinent) :\n" + "\n".join(
+                    f"- Q: {f.question_type}\n  R: {f.reponse}\n  Source ({f.date_verification}): {f.source_officielle}"
+                    for f in faqs
+                )
+            )
+
     return "\n\n".join(morceaux)
 
 
 def poser_question(db: Session, user_id, question: str) -> str:
     """
     Point d'entrée principal : traite une question libre de l'utilisateur, en s'appuyant
-    sur son historique de conversation et le contexte de son profil/critères/checklist.
+    sur son historique de conversation et le contexte de son profil/critères/checklist/FAQ.
+    Si le modèle juge la question hors de ce contexte, il peut déclencher une recherche web
+    en direct (function calling) avant de répondre, plutôt que de deviner ou de refuser.
     Persiste les deux messages (utilisateur + assistant) en base avant de retourner.
     """
     if not settings.GROQ_API_KEY:
@@ -118,19 +155,88 @@ def poser_question(db: Session, user_id, question: str) -> str:
     )
     historique = list(reversed(historique))  # remet dans l'ordre chronologique
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT + "\n\nCONTEXTE :\n" + contexte}]
+    instruction_recherche = (
+        "\n\nSi la question porte sur une information factuelle précise (frais, délais, "
+        "conditions) qui n'est NI dans le contexte ci-dessus NI dans la FAQ vérifiée, tu peux "
+        "utiliser l'outil 'rechercher_web' pour trouver une réponse à jour plutôt que de deviner "
+        "ou de refuser platement. Cite toujours l'URL de la source trouvée dans ta réponse finale."
+        if settings.TAVILY_API_KEY else ""
+    )
+
+    messages = [{"role": "system", "content": SYSTEM_PROMPT + instruction_recherche + "\n\nCONTEXTE :\n" + contexte}]
     for m in historique:
         messages.append({"role": m.role, "content": m.contenu})
     messages.append({"role": "user", "content": question})
 
+    outils = [{
+        "type": "function",
+        "function": {
+            "name": "rechercher_web",
+            "description": (
+                "Recherche des informations à jour sur le web quand la question porte sur "
+                "un fait précis (frais, délais, conditions) absent du contexte et de la FAQ."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "requete": {
+                        "type": "string",
+                        "description": "La requête de recherche, concise et ciblée (3-8 mots).",
+                    }
+                },
+                "required": ["requete"],
+            },
+        },
+    }] if settings.TAVILY_API_KEY else None
+
     try:
         client = Groq(api_key=settings.GROQ_API_KEY)
-        response = client.chat.completions.create(
-            model=settings.GROQ_MODEL,
-            messages=messages,
-            temperature=0.3,
-        )
-        reponse_texte = response.choices[0].message.content
+
+        kwargs = {"model": settings.GROQ_MODEL, "messages": messages, "temperature": 0.3}
+        if outils:
+            kwargs["tools"] = outils
+            kwargs["tool_choice"] = "auto"
+
+        response = client.chat.completions.create(**kwargs)
+        message = response.choices[0].message
+
+        # Si le modèle a demandé une recherche web, on l'exécute et on relance une dernière fois
+        if message.tool_calls:
+            messages.append({
+                "role": "assistant",
+                "content": message.content or "",
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+                    }
+                    for tc in message.tool_calls
+                ],
+            })
+
+            for tool_call in message.tool_calls:
+                import json as _json
+                arguments = _json.loads(tool_call.function.arguments)
+                resultats = rechercher_web(arguments.get("requete", question))
+
+                contenu_resultats = "\n\n".join(
+                    f"[{r['titre']}]({r['url']})\n{r['extrait']}" for r in resultats
+                ) or "Aucun résultat trouvé."
+
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": contenu_resultats,
+                })
+
+            reponse_finale = client.chat.completions.create(
+                model=settings.GROQ_MODEL, messages=messages, temperature=0.3,
+            )
+            reponse_texte = reponse_finale.choices[0].message.content
+        else:
+            reponse_texte = message.content
+
     except Exception as e:
         print(f"❌ Erreur chatbot Groq pour {user_id} : {e}")
         reponse_texte = (

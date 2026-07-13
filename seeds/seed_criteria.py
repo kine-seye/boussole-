@@ -39,7 +39,7 @@ def seed_canada_visa_etudiant(db):
             pays="Canada", type_demarche="visa_etudiant",
             type_critere=TypeCritere.CAPACITE_FINANCIERE,
             libelle="Preuve de fonds suffisants",
-            valeur_requise="20 635 CAD/an (hors Québec, 2024)", valeur_requise_numerique=20635,
+            valeur_requise="22 895 CAD/an (depuis sept. 2025, hors Québec)", valeur_requise_numerique=22895,
             poids=25, eliminatoire=True,
             explication="Doit couvrir frais de scolarité + subsistance pour la première année.",
             source_officielle="https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/permis-etudes.html",

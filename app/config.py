@@ -1,13 +1,13 @@
 """
 Configuration centralisée de l'application.
-Toutes les variables sensibles viennent des variables d'environnement.
+Toutes les variables sensibles viennent des variables d'environnement (fichier .env).
 """
 import os
 from functools import lru_cache
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()  # charge le fichier .env dans les variables d'environnement du process
 
 
 class Settings:
@@ -19,6 +19,7 @@ class Settings:
 
     # LLM - Groq (Llama 3.3 70B), même stack que Sefa Bien-être
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
     GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
     # WhatsApp Cloud API (Meta) - réutilise la config Sefa
